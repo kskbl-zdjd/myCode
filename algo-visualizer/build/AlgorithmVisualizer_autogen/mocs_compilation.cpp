@@ -4,3 +4,4 @@
 #include "2AH2CZ3NSK/moc_BeginnerMode.cpp"
 #include "2AH2CZ3NSK/moc_DeveloperMode.cpp"
 #include "TZTGK5DBOK/moc_ArrayVisualizer.cpp"
+#include "TZTGK5DBOK/moc_HeapVisualizer.cpp"

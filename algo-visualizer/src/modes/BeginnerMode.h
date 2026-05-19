@@ -5,6 +5,7 @@
 #include "../core/AnimationController.h"
 
 class ArrayVisualizer;
+class HeapVisualizer;
 class QComboBox;
 class QTextEdit;
 class QLabel;
@@ -32,6 +33,7 @@ private slots:
     void onStepExecuted(int stepIndex, int totalSteps, const QString &description);
     void onStateChanged(AnimationState newState);
     void onZoomCodeClicked();
+    void onToggleHeapIndices();
 
 private:
     void setupUI();
@@ -49,8 +51,10 @@ private:
 
     // 中间
     ArrayVisualizer *m_arrayVisualizer;
+    HeapVisualizer *m_heapVisualizer;
     QLabel *m_statusLabel;
     QProgressBar *m_progressBar;
+    QPushButton *m_toggleIndicesBtn;
 
     // 右侧
     QLineEdit *m_dataInput;

@@ -7,8 +7,8 @@ ArrayVisualizer::ArrayVisualizer(QWidget *parent)
     : QWidget(parent)
     , m_blockSize(50)
     , m_blockSpacing(8)
-    , m_arrowHeight(50)
-    , m_indexAreaHeight(25)
+    , m_arrowHeight(5)       // 顶部箭头区域（不再使用，保留兼容）
+    , m_indexAreaHeight(45)  // 底部区域高度：25(索引) + 20(箭头)
 {
     setMinimumHeight(200);
 }
@@ -110,7 +110,7 @@ QRectF ArrayVisualizer::blockRect(int index) const
                    + (static_cast<int>(m_values.size()) - 1) * m_blockSpacing;
     int startX = (width() - totalWidth) / 2;
     int x = startX + index * (m_blockSize + m_blockSpacing);
-    int y = m_arrowHeight; // 色块从箭头区域下方开始
+    int y = m_arrowHeight; // 色块从顶部箭头区域下方开始
     return QRectF(x, y, m_blockSize, m_blockSize);
 }
 
@@ -144,7 +144,7 @@ void ArrayVisualizer::paintEvent(QPaintEvent * /*event*/)
         );
 
         // 使用 box.color（如果未设置则回退到红色）
-        QColor boxColor = box.color.isValid() ? box.color : COLOR_DASHED_BOX;
+        QColor boxColor = box.color.isValid() ? box.color : COLOR_DASHEDBOX;
         QPen dashedPen(boxColor, 2, Qt::DashLine);
         painter.setPen(dashedPen);
         painter.setBrush(Qt::NoBrush);
@@ -168,9 +168,14 @@ void ArrayVisualizer::paintEvent(QPaintEvent * /*event*/)
     // --- 2. 绘制色块 ---
     for (int i = 0; i < static_cast<int>(m_values.size()); ++i) {
         QRectF rect = blockRect(i);
-        QColor color = (m_blockStates[i] == BlockState::Active)
-                       ? COLOR_ACTIVE_BLOCK
-                       : COLOR_NORMAL_BLOCK;
+            QColor color;
+            switch (m_blockStates[i]) {
+                case BlockState::Normal:    color = COLOR_NORMAL_BLOCK; break;
+                case BlockState::Active:    color = COLOR_ACTIVE_BLOCK; break;
+                case BlockState::Comparing: color = COLOR_COMPARING_BLOCK; break;
+                case BlockState::Swapping:  color = COLOR_SWAPPING_BLOCK; break;
+                case BlockState::Sorted:    color = COLOR_SORTED_BLOCK; break;
+            }
 
         // 色块填充
         painter.setPen(Qt::NoPen);
@@ -207,28 +212,36 @@ void ArrayVisualizer::paintEvent(QPaintEvent * /*event*/)
         );
     }
 
-    // --- 4. 绘制蓝色箭头 ---
+    // --- 4. 绘制蓝色箭头（在色块下方，向上指着节点） ---
     for (const auto &arrow : m_arrows) {
-        QPointF tip = blockCenterBottom(arrow.targetIndex);
-        QPointF base(tip.x(), 2); // 箭头从顶部开始
-
+        QRectF block = blockRect(arrow.targetIndex);
+        
+        // 箭头在色块下方
+        qreal centerX = block.center().x();
+        qreal bottomY = block.bottom();  // 色块底部
+        qreal arrowLen = 25;  // 箭头线长度
+        
+        // 箭头线：从下方指向色块底部
+        QPointF lineBase(centerX, bottomY + arrowLen);
+        QPointF lineTip(centerX, bottomY + 2);
+        
         QPen arrowPen(COLOR_ARROW, 2);
         painter.setPen(arrowPen);
-        painter.setBrush(COLOR_ARROW);
-
-        // 箭头线
-        painter.drawLine(base, tip);
-
-        // 箭头头部（三角形）
-        qreal arrowSize = 8;
+        painter.drawLine(lineBase, lineTip);
+        
+        // 箭头头部（向上指的三角形）
+        qreal arrowSize = 6;
         QPainterPath arrowHead;
-        arrowHead.moveTo(tip);
-        arrowHead.lineTo(tip.x() - arrowSize, tip.y() - arrowSize * 1.5);
-        arrowHead.lineTo(tip.x() + arrowSize, tip.y() - arrowSize * 1.5);
+        arrowHead.moveTo(centerX, bottomY + 2);              // 三角形尖端（指向色块）
+        arrowHead.lineTo(centerX - arrowSize, bottomY + arrowSize * 2 + 2);  // 左下角
+        arrowHead.lineTo(centerX + arrowSize, bottomY + arrowSize * 2 + 2);  // 右下角
         arrowHead.closeSubpath();
+        
+        painter.setBrush(COLOR_ARROW);
+        painter.setPen(Qt::NoPen);
         painter.drawPath(arrowHead);
-
-        // 箭头标签
+        
+        // 箭头标签（在箭头线下方）
         if (!arrow.label.isEmpty()) {
             painter.setPen(COLOR_ARROW);
             QFont labelFont = painter.font();
@@ -236,7 +249,8 @@ void ArrayVisualizer::paintEvent(QPaintEvent * /*event*/)
             labelFont.setBold(true);
             painter.setFont(labelFont);
             painter.drawText(
-                QPointF(tip.x() + arrowSize + 2, tip.y() - arrowSize),
+                QRectF(centerX - 25, bottomY + arrowLen + 2, 50, 15),
+                Qt::AlignCenter,
                 arrow.label
             );
         }
@@ -247,4 +261,11 @@ void ArrayVisualizer::resizeEvent(QResizeEvent *event)
 {
     recalcLayout();
     QWidget::resizeEvent(event);
+}
+
+QSize ArrayVisualizer::sizeHint() const
+{
+    int totalWidth = static_cast<int>(m_values.size()) * (m_blockSize + m_blockSpacing);
+    int totalHeight = m_arrowHeight + m_blockSize + m_indexAreaHeight;
+    return QSize(totalWidth + 40, totalHeight);
 }

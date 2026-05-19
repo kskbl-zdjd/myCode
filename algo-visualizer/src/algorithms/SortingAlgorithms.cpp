@@ -303,7 +303,7 @@ void SortingAlgorithms::insertionSort(
 }
 
 // ============================================================
-// 快速排序（Hoare 双向分区）
+// 快速排序（Hoare 双向分区 - j 先遍历）
 // ============================================================
 
 void SortingAlgorithms::quickSort(
@@ -375,20 +375,23 @@ void SortingAlgorithms::quickSortRecursive(
 
     int pi = partition(viz, ctrl, arr, low, high, path);
 
-    // 准备左右子区间的待处理标记
-    std::vector<DashedBox> leftPending = pendingBoxes;
-    std::vector<DashedBox> rightPending = pendingBoxes;
+    // ✅ 准备左右子区间的待处理标记（带边界检查）
+    // 处理左子区间 [low, pi] 时，右子区间 [pi+1, high] 是待处理的（绿色框）
+    // 处理右子区间 [pi+1, high] 时，左子区间 [low, pi] 已经是处理完的（不需要标记）
+    std::vector<DashedBox> leftPending = pendingBoxes;   // 用于左子区间递归
+    std::vector<DashedBox> rightPending = pendingBoxes;  // 用于右子区间递归
 
+    // 右子区间 [pi + 1, high] 是待处理的，加入 leftPending
     if (pi + 1 <= high) {
         leftPending.push_back({pi + 1, high, "待处理", COLOR_GREEN_BOX});
     }
-    if (low <= pi - 1) {
-        rightPending.push_back({low, pi - 1, "待处理", COLOR_GREEN_BOX});
-    }
 
-    if (low <= pi - 1) {
-        quickSortRecursive(viz, ctrl, arr, low, pi - 1, leftPending, path + " → 左");
+    // ✅ 递归调用带边界检查
+    // 先处理左子区间 [low, pi]
+    if (low <= pi) {
+        quickSortRecursive(viz, ctrl, arr, low, pi, leftPending, path + " → 左");
     }
+    // 再处理右子区间 [pi + 1, high]
     if (pi + 1 <= high) {
         quickSortRecursive(viz, ctrl, arr, pi + 1, high, rightPending, path + " → 右");
     }
@@ -440,50 +443,7 @@ int SortingAlgorithms::partition(
     }
 
     while (i <= j) {
-        // i 从左向右找 > pivot 的元素（初始位置参与比较）
-        while (i <= j && arr[i] <= pivot) {
-            int ii = i, jj = j;
-            ctrl->addStep({
-                [viz, ii, jj, ll]() {
-                    viz->resetAllBlockStates();          // 所有变绿
-                    viz->setBlockState(ll, BlockState::Active);  // pivot 变蓝
-                    viz->setBlockState(ii, BlockState::Active);  // i 变蓝
-                    viz->setBlockState(jj, BlockState::Active);  // j 变蓝
-                    viz->setArrows({{ll, "pivot"}, {ii, "i"}, {jj, "j"}});
-                },
-                [viz]() {
-                    viz->resetAllBlockStates();
-                    viz->clearArrows();
-                },
-                QString("%1: i在 %2, arr[%2]=%3 <= pivot=%4, 继续")
-                    .arg(path).arg(ii).arg(arr[ii]).arg(pivot)
-            });
-            i++;
-        }
-
-        if (i > j) break;
-
-        // i 找到 > pivot 的元素，停止（pivot、i、j 变蓝）
-        {
-            int ii = i, jj = j;
-            ctrl->addStep({
-                [viz, ii, jj, ll]() {
-                    viz->resetAllBlockStates();
-                    viz->setBlockState(ll, BlockState::Active);  // pivot 变蓝
-                    viz->setBlockState(ii, BlockState::Active);  // i 变蓝
-                    viz->setBlockState(jj, BlockState::Active);  // j 变蓝
-                    viz->setArrows({{ll, "pivot"}, {ii, "i"}, {jj, "j"}});
-                },
-                [viz]() {
-                    viz->resetAllBlockStates();
-                    viz->clearArrows();
-                },
-                QString("%1: i停在 %2, arr[%2]=%3 > pivot=%4")
-                    .arg(path).arg(ii).arg(arr[ii]).arg(pivot)
-            });
-        }
-
-        // j 从右向左找 < pivot 的元素（初始位置参与比较）
+        // ✅ j 先遍历：从右向左找 < pivot 的元素（初始位置参与比较）
         while (i <= j && arr[j] >= pivot) {
             int ii = i, jj = j;
             ctrl->addStep({
@@ -526,6 +486,49 @@ int SortingAlgorithms::partition(
             });
         }
 
+        // ✅ i 再遍历：从左向右找 > pivot 的元素（初始位置参与比较）
+        while (i <= j && arr[i] <= pivot) {
+            int ii = i, jj = j;
+            ctrl->addStep({
+                [viz, ii, jj, ll]() {
+                    viz->resetAllBlockStates();          // 所有变绿
+                    viz->setBlockState(ll, BlockState::Active);  // pivot 变蓝
+                    viz->setBlockState(ii, BlockState::Active);  // i 变蓝
+                    viz->setBlockState(jj, BlockState::Active);  // j 变蓝
+                    viz->setArrows({{ll, "pivot"}, {ii, "i"}, {jj, "j"}});
+                },
+                [viz]() {
+                    viz->resetAllBlockStates();
+                    viz->clearArrows();
+                },
+                QString("%1: i在 %2, arr[%2]=%3 <= pivot=%4, 继续")
+                    .arg(path).arg(ii).arg(arr[ii]).arg(pivot)
+            });
+            i++;
+        }
+
+        if (i > j) break;
+
+        // i 找到 > pivot 的元素，停止（pivot、i、j 变蓝）
+        {
+            int ii = i, jj = j;
+            ctrl->addStep({
+                [viz, ii, jj, ll]() {
+                    viz->resetAllBlockStates();
+                    viz->setBlockState(ll, BlockState::Active);  // pivot 变蓝
+                    viz->setBlockState(ii, BlockState::Active);  // i 变蓝
+                    viz->setBlockState(jj, BlockState::Active);  // j 变蓝
+                    viz->setArrows({{ll, "pivot"}, {ii, "i"}, {jj, "j"}});
+                },
+                [viz]() {
+                    viz->resetAllBlockStates();
+                    viz->clearArrows();
+                },
+                QString("%1: i停在 %2, arr[%2]=%3 > pivot=%4")
+                    .arg(path).arg(ii).arg(arr[ii]).arg(pivot)
+            });
+        }
+
         // 交换 arr[i] 和 arr[j]（pivot、i、j 变蓝，交换的两个也变蓝）
         {
             int a = i, b = j;
@@ -553,8 +556,14 @@ int SortingAlgorithms::partition(
         // 不执行 i++ 和 j--
     }
 
-    // 步骤：pivot 归位，交换 arr[low] 和 arr[j]
+    // ✅ 步骤：pivot 归位，交换 arr[low] 和 arr[j]
+    // 注意：j 可能小于 low（当所有元素都 >= pivot 时），需要保护
     int pivotPos = j;
+
+    // 确保 pivotPos 在有效范围内
+    if (pivotPos < low) pivotPos = low;
+    if (pivotPos > high) pivotPos = high;
+
     if (pivotPos != low) {
         int a = low, b = pivotPos;
         ctrl->addStep({

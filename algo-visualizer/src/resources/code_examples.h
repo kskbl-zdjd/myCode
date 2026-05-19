@@ -83,6 +83,45 @@ int partition(int arr[], int low, int high) {
 }
 )cpp";
 
+inline const QString HEAP_SORT_CODE = R"cpp(
+// 堆排序主函数
+void heapSort(vector<int>& arr) {
+    int n = arr.size();
+
+    // 建堆阶段：从最后一个父节点开始，自底向上建堆
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        siftDown(arr, n, i);
+    }
+
+    // 排序阶段：逐个将堆顶元素移到末尾
+    for (int i = n - 1; i > 0; i--) {
+        swap(arr[0], arr[i]);    // 堆顶与末尾交换
+        siftDown(arr, i, 0);     // 对堆顶下沉调整
+    }
+}
+
+// 下沉调整函数
+void siftDown(vector<int>& arr, int n, int i) {
+    int largest = i;           // 假设当前节点最大
+    int left = 2 * i + 1;      // 左子节点索引
+    int right = 2 * i + 2;     // 右子节点索引
+
+    // 找出父节点、左子节点、右子节点中的最大值
+    if (left < n && arr[left] > arr[largest]) {
+        largest = left;
+    }
+    if (right < n && arr[right] > arr[largest]) {
+        largest = right;
+    }
+
+    // 若最大值不是父节点，交换并继续下沉
+    if (largest != i) {
+        swap(arr[i], arr[largest]);
+        siftDown(arr, n, largest);  // 递归下沉
+    }
+}
+)cpp";
+
 } // namespace CodeExamples
 
 #endif // CODE_EXAMPLES_H

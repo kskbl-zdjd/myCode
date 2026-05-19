@@ -8,7 +8,10 @@
 // 色块状态
 enum class BlockState {
     Normal,     // 绿色（默认）
-    Active      // 蓝色（参与比较/交换/被选中）
+    Active,     // 红色（当前父节点）
+    Comparing,  // 蓝色（参与比较的子节点）
+    Swapping,   // 橙色（正在交换）
+    Sorted      // 灰色（已排序）
 };
 
 // 箭头信息：指向某个数组下标
@@ -55,6 +58,7 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    QSize sizeHint() const override;
 
 private:
     // 数据
@@ -72,11 +76,14 @@ private:
     int m_indexAreaHeight; // 下标区域高度
 
     // 颜色常量
-    const QColor COLOR_NORMAL_BLOCK  = QColor("#4CAF50"); // 绿色
-    const QColor COLOR_ACTIVE_BLOCK  = QColor("#2196F3"); // 蓝色
-    const QColor COLOR_ARROW         = QColor("#1565C0"); // 深蓝色箭头
-    const QColor COLOR_DASHED_BOX    = QColor("#F44336"); // 红色虚线框
-    const QColor COLOR_INDEX_TEXT    = QColor("#333333"); // 下标文字
+    const QColor COLOR_NORMAL_BLOCK   = QColor("#4CAF50"); // 绿色（默认）
+    const QColor COLOR_ACTIVE_BLOCK   = QColor("#F44336"); // 红色（当前父节点）
+    const QColor COLOR_COMPARING_BLOCK = QColor("#2196F3"); // 蓝色（参与比较）
+    const QColor COLOR_SWAPPING_BLOCK = QColor("#FF9800"); // 橙色（正在交换）
+    const QColor COLOR_SORTED_BLOCK  = QColor("#9E9E9E"); // 灰色（已排序）
+    const QColor COLOR_ARROW          = QColor("#1565C0"); // 深蓝色箭头
+    const QColor COLOR_DASHEDBOX     = QColor("#F44336"); // 红色虚线框
+    const QColor COLOR_INDEX_TEXT     = QColor("#333333"); // 下标文字
 
     void recalcLayout();
     QRectF blockRect(int index) const;     // 获取第index个色块的矩形

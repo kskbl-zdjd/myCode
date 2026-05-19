@@ -34,7 +34,7 @@ CMAKE_AR:FILEPATH=E:/QT/qt/Tools/mingw1310_64/bin/ar.exe
 CMAKE_BUILD_TYPE:STRING=
 
 //CXX compiler
-CMAKE_CXX_COMPILER:FILEPATH=E:/QT/qt/Tools/mingw1310_64/bin/c++.exe
+CMAKE_CXX_COMPILER:FILEPATH=E:/QT/qt/Tools/mingw1310_64/bin/g++.exe
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler

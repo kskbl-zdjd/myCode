@@ -1,6 +1,8 @@
 #include "BeginnerMode.h"
 #include "../visualizers/ArrayVisualizer.h"
+#include "../visualizers/HeapVisualizer.h"
 #include "../algorithms/SortingAlgorithms.h"
+#include "../algorithms/HeapSort.h"
 #include "../resources/code_examples.h"
 
 #include <QHBoxLayout>
@@ -21,6 +23,7 @@
 BeginnerMode::BeginnerMode(QWidget *parent)
     : QWidget(parent)
     , m_animCtrl(new AnimationController(this))
+    , m_heapVisualizer(nullptr)
 {
     setupUI();
 
@@ -69,7 +72,7 @@ void BeginnerMode::setupLeftPanel(QWidget *parent)
 
     m_algorithmCombo = new QComboBox();
     m_algorithmCombo->addItems({
-        "冒泡排序", "选择排序", "插入排序", "快速排序"
+        "冒泡排序", "选择排序", "插入排序", "快速排序", "堆排序"
     });
     algoLayout->addWidget(m_algorithmCombo);
 
@@ -105,7 +108,15 @@ void BeginnerMode::setupCenterPanel(QWidget *parent)
     QGroupBox *vizGroup = new QGroupBox("可视化区域", parent);
     QVBoxLayout *vizLayout = new QVBoxLayout(vizGroup);
 
+    // 堆可视化组件（仅堆排序时显示）
+    m_heapVisualizer = new HeapVisualizer();
+    m_heapVisualizer->setVisible(false);
+    m_heapVisualizer->setFixedHeight(250);
+    vizLayout->addWidget(m_heapVisualizer);
+
+    // 数组可视化组件（所有排序都显示）
     m_arrayVisualizer = new ArrayVisualizer();
+    m_arrayVisualizer->setMinimumHeight(120);  // 确保有足够高度
     vizLayout->addWidget(m_arrayVisualizer, 1);
 
     // 状态栏
@@ -122,6 +133,12 @@ void BeginnerMode::setupCenterPanel(QWidget *parent)
     vizLayout->addWidget(m_progressBar);
 
     layout->addWidget(vizGroup);
+
+    // 堆索引显示/隐藏按钮（仅在堆排序时显示）
+    m_toggleIndicesBtn = new QPushButton("显示/隐藏节点索引");
+    m_toggleIndicesBtn->setVisible(false);
+    connect(m_toggleIndicesBtn, &QPushButton::clicked, this, &BeginnerMode::onToggleHeapIndices);
+    layout->addWidget(m_toggleIndicesBtn);
 }
 
 void BeginnerMode::setupRightPanel(QWidget *parent)
@@ -200,6 +217,11 @@ void BeginnerMode::onAlgorithmChanged(int /*index*/)
     QString algo = m_algorithmCombo->currentText();
     updateCodeDisplay(algo);
 
+    // 显示/隐藏堆可视化组件
+    bool isHeapSort = (algo == "堆排序");
+    m_heapVisualizer->setVisible(isHeapSort);
+    m_toggleIndicesBtn->setVisible(isHeapSort);
+
     // 如果正在播放，先停止
     if (m_animCtrl->state() != AnimationState::Stopped) {
         m_animCtrl->stop();
@@ -235,6 +257,8 @@ void BeginnerMode::onStartClicked()
             SortingAlgorithms::insertionSort(m_arrayVisualizer, m_animCtrl, data);
         } else if (algo == "快速排序") {
             SortingAlgorithms::quickSort(m_arrayVisualizer, m_animCtrl, data);
+        } else if (algo == "堆排序") {
+            HeapSort::heapSort(m_heapVisualizer, m_arrayVisualizer, m_animCtrl, data);
         }
     }
 
@@ -332,6 +356,13 @@ void BeginnerMode::onZoomCodeClicked()
     dialog->deleteLater();
 }
 
+void BeginnerMode::onToggleHeapIndices()
+{
+    if (m_heapVisualizer) {
+        m_heapVisualizer->setShowIndices(!m_heapVisualizer->showIndices());
+    }
+}
+
 void BeginnerMode::updateCodeDisplay(const QString &algorithmName)
 {
     if (algorithmName == "冒泡排序") {
@@ -342,6 +373,8 @@ void BeginnerMode::updateCodeDisplay(const QString &algorithmName)
         m_codeDisplay->setPlainText(CodeExamples::INSERTION_SORT);
     } else if (algorithmName == "快速排序") {
         m_codeDisplay->setPlainText(CodeExamples::QUICK_SORT);
+    } else if (algorithmName == "堆排序") {
+        m_codeDisplay->setPlainText(CodeExamples::HEAP_SORT_CODE);
     }
 }
 
