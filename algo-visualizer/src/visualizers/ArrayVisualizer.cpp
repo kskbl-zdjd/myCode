@@ -9,6 +9,7 @@ ArrayVisualizer::ArrayVisualizer(QWidget *parent)
     , m_blockSpacing(8)
     , m_arrowHeight(5)       // 顶部箭头区域（不再使用，保留兼容）
     , m_indexAreaHeight(45)  // 底部区域高度：25(索引) + 20(箭头)
+    , m_verticalOffset(30)   // 垂直偏移量，使画面整体向下移动
 {
     setMinimumHeight(200);
 }
@@ -110,7 +111,7 @@ QRectF ArrayVisualizer::blockRect(int index) const
                    + (static_cast<int>(m_values.size()) - 1) * m_blockSpacing;
     int startX = (width() - totalWidth) / 2;
     int x = startX + index * (m_blockSize + m_blockSpacing);
-    int y = m_arrowHeight; // 色块从顶部箭头区域下方开始
+    int y = m_arrowHeight + m_verticalOffset; // 添加垂直偏移量
     return QRectF(x, y, m_blockSize, m_blockSize);
 }
 
@@ -255,6 +256,11 @@ void ArrayVisualizer::paintEvent(QPaintEvent * /*event*/)
             );
         }
     }
+
+    // --- 5. 绘制临时空间（归并排序用） ---
+    if (m_hasTempSpace) {
+        drawTempSpace(painter);
+    }
 }
 
 void ArrayVisualizer::resizeEvent(QResizeEvent *event)
@@ -268,4 +274,194 @@ QSize ArrayVisualizer::sizeHint() const
     int totalWidth = static_cast<int>(m_values.size()) * (m_blockSize + m_blockSpacing);
     int totalHeight = m_arrowHeight + m_blockSize + m_indexAreaHeight;
     return QSize(totalWidth + 40, totalHeight);
+}
+
+// ========== 新增：单值写入 ==========
+
+void ArrayVisualizer::setValue(int index, int value)
+{
+    if (index >= 0 && index < static_cast<int>(m_values.size())) {
+        m_values[index] = value;
+        update();
+    }
+}
+
+// ========== 新增：临时空间操作 ==========
+
+void ArrayVisualizer::clearTempSpace()
+{
+    m_tempValues.clear();
+    m_hasTempSpace = false;
+    m_tempDashedBoxes.clear();
+    m_tempArrows.clear();
+    m_tempHighlighted.clear();
+    update();
+}
+
+void ArrayVisualizer::setTempValue(int index, int value)
+{
+    if (index >= static_cast<int>(m_tempValues.size())) {
+        m_tempValues.resize(index + 1, -1);
+        m_tempHighlighted.resize(index + 1, false);
+    }
+    m_tempValues[index] = value;
+    m_hasTempSpace = true;
+    update();
+}
+
+void ArrayVisualizer::setTempDashedBoxes(const std::vector<DashedBox> &boxes)
+{
+    m_tempDashedBoxes = boxes;
+    update();
+}
+
+void ArrayVisualizer::clearTempDashedBoxes()
+{
+    m_tempDashedBoxes.clear();
+    update();
+}
+
+void ArrayVisualizer::setTempArrows(const std::vector<ArrowMarker> &arrows)
+{
+    m_tempArrows = arrows;
+    update();
+}
+
+void ArrayVisualizer::clearTempArrows()
+{
+    m_tempArrows.clear();
+    update();
+}
+
+void ArrayVisualizer::highlightTempBlock(int index)
+{
+    if (index >= 0 && index < static_cast<int>(m_tempHighlighted.size())) {
+        m_tempHighlighted[index] = true;
+        update();
+    }
+}
+
+void ArrayVisualizer::unhighlightTempBlock(int index)
+{
+    if (index >= 0 && index < static_cast<int>(m_tempHighlighted.size())) {
+        m_tempHighlighted[index] = false;
+        update();
+    }
+}
+
+// ========== 新增：绘制临时空间 ==========
+
+void ArrayVisualizer::drawTempSpace(QPainter &painter)
+{
+    if (m_tempValues.empty()) return;
+
+    int totalWidth = static_cast<int>(m_tempValues.size()) * m_blockSize
+                   + (static_cast<int>(m_tempValues.size()) - 1) * m_blockSpacing;
+    int startX = (width() - totalWidth) / 2;
+
+    // 临时空间绘制在主数组下方，留出索引区域后再向下 10px
+    int tempY = m_arrowHeight + m_blockSize + m_indexAreaHeight + 10;
+
+    // 绘制"临时空间"标题
+    painter.setPen(QColor("#616161"));
+    QFont titleFont = painter.font();
+    titleFont.setPointSize(8);
+    titleFont.setBold(false);
+    painter.setFont(titleFont);
+    painter.drawText(startX, tempY - 2, "temp[]");
+
+    for (int i = 0; i < static_cast<int>(m_tempValues.size()); i++) {
+        int x = startX + i * (m_blockSize + m_blockSpacing);
+        QRectF rect(x, tempY, m_blockSize, m_blockSize);
+
+        // 高亮色或普通黄色背景
+        bool highlighted = (i < static_cast<int>(m_tempHighlighted.size())) && m_tempHighlighted[i];
+        QColor bgColor = highlighted ? QColor("#FF9800") : QColor("#FFEB3B");
+
+        painter.setBrush(bgColor);
+        painter.setPen(QPen(QColor("#9E9E9E"), 1, Qt::DashLine));
+        painter.drawRect(rect);
+
+        // 绘制数值
+        if (m_tempValues[i] >= 0) {
+            painter.setPen(Qt::black);
+            QFont numFont = painter.font();
+            numFont.setPointSize(11);
+            numFont.setBold(true);
+            painter.setFont(numFont);
+            painter.drawText(rect, Qt::AlignCenter, QString::number(m_tempValues[i]));
+        }
+
+        // 下标
+        painter.setPen(QColor("#333333"));
+        QFont idxFont = painter.font();
+        idxFont.setPointSize(9);
+        idxFont.setBold(false);
+        painter.setFont(idxFont);
+        painter.drawText(
+            QRectF(x, tempY + m_blockSize + 2, m_blockSize, 16),
+            Qt::AlignCenter,
+            QString("[%1]").arg(i)
+        );
+    }
+
+    // 绘制临时空间的虚线框
+    for (const auto &box : m_tempDashedBoxes) {
+        if (box.startIndex < 0 || box.endIndex >= static_cast<int>(m_tempValues.size())) continue;
+        int x0 = startX + box.startIndex * (m_blockSize + m_blockSpacing);
+        int x1 = startX + box.endIndex   * (m_blockSize + m_blockSpacing) + m_blockSize;
+        QRectF boxRect(x0 - 4, tempY - 4, x1 - x0 + 8, m_blockSize + 8);
+        QColor boxColor = box.color.isValid() ? box.color : QColor("#F44336");
+        painter.setPen(QPen(boxColor, 2, Qt::DashLine));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(boxRect);
+        if (!box.label.isEmpty()) {
+            painter.setPen(boxColor);
+            QFont lf = painter.font();
+            lf.setPointSize(8);
+            lf.setBold(true);
+            painter.setFont(lf);
+            painter.drawText(
+                static_cast<int>(boxRect.left()),
+                static_cast<int>(boxRect.top()) - 3,
+                box.label
+            );
+        }
+    }
+
+    // 绘制临时空间的箭头
+    for (const auto &arrow : m_tempArrows) {
+        if (arrow.targetIndex < 0 || arrow.targetIndex >= static_cast<int>(m_tempValues.size())) continue;
+        int x = startX + arrow.targetIndex * (m_blockSize + m_blockSpacing);
+        qreal cx = x + m_blockSize / 2.0;
+        qreal topY = tempY;
+        qreal arrowLen = 18;
+
+        QPen arrowPen(QColor("#1565C0"), 2);
+        painter.setPen(arrowPen);
+        painter.drawLine(QPointF(cx, topY - arrowLen), QPointF(cx, topY - 2));
+
+        qreal arrowSize = 5;
+        QPainterPath arrowHead;
+        arrowHead.moveTo(cx, topY - 2);
+        arrowHead.lineTo(cx - arrowSize, topY - 2 - arrowSize * 1.5);
+        arrowHead.lineTo(cx + arrowSize, topY - 2 - arrowSize * 1.5);
+        arrowHead.closeSubpath();
+        painter.setBrush(QColor("#1565C0"));
+        painter.setPen(Qt::NoPen);
+        painter.drawPath(arrowHead);
+
+        if (!arrow.label.isEmpty()) {
+            painter.setPen(QColor("#1565C0"));
+            QFont lf = painter.font();
+            lf.setPointSize(8);
+            lf.setBold(true);
+            painter.setFont(lf);
+            painter.drawText(
+                QRectF(cx - 20, topY - arrowLen - 14, 40, 14),
+                Qt::AlignCenter,
+                arrow.label
+            );
+        }
+    }
 }

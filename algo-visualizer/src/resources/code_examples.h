@@ -122,6 +122,41 @@ void siftDown(vector<int>& arr, int n, int i) {
 }
 )cpp";
 
+inline const QString MERGE_SORT_CODE = R"cpp(
+void mergeSort(int arr[], int left, int right) {
+    if (left >= right) return;
+    
+    int mid = left + (right - left) / 2;
+    
+    mergeSort(arr, left, mid);
+    mergeSort(arr, mid + 1, right);
+    merge(arr, left, mid, right);
+}
+
+void merge(int arr[], int left, int mid, int right) {
+    int n = right - left + 1;
+    int* temp = new int[n];
+    
+    for (int i = 0; i < n; i++) {
+        temp[i] = arr[left + i];
+    }
+    
+    int i = 0, j = mid - left + 1, k = left;
+    while (i <= mid - left && j < n) {
+        if (temp[i] <= temp[j]) {
+            arr[k++] = temp[i++];
+        } else {
+            arr[k++] = temp[j++];
+        }
+    }
+    
+    while (i <= mid - left) arr[k++] = temp[i++];
+    while (j < n) arr[k++] = temp[j++];
+    
+    delete[] temp;
+}
+)cpp";
+
 } // namespace CodeExamples
 
 #endif // CODE_EXAMPLES_H

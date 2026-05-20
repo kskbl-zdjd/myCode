@@ -55,6 +55,19 @@ public:
     // --- 交换 ---
     void swapValues(int i, int j);
 
+    // --- 新增：单值写入 ---
+    void setValue(int index, int value);
+
+    // --- 新增：临时空间操作 ---
+    void clearTempSpace();
+    void setTempValue(int index, int value);
+    void setTempDashedBoxes(const std::vector<DashedBox> &boxes);
+    void clearTempDashedBoxes();
+    void setTempArrows(const std::vector<ArrowMarker> &arrows);
+    void clearTempArrows();
+    void highlightTempBlock(int index);
+    void unhighlightTempBlock(int index);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -74,6 +87,7 @@ private:
     int m_blockSpacing;    // 色块间距
     int m_arrowHeight;     // 箭头区域高度
     int m_indexAreaHeight; // 下标区域高度
+    int m_verticalOffset;  // 垂直偏移量，使画面整体向下移动
 
     // 颜色常量
     const QColor COLOR_NORMAL_BLOCK   = QColor("#4CAF50"); // 绿色（默认）
@@ -88,6 +102,14 @@ private:
     void recalcLayout();
     QRectF blockRect(int index) const;     // 获取第index个色块的矩形
     QPointF blockCenterBottom(int index) const; // 色块底部中心点（箭头终点）
+    void drawTempSpace(QPainter &painter); // 绘制临时空间
+
+    // 新增成员变量
+    std::vector<int> m_tempValues;
+    bool m_hasTempSpace = false;
+    std::vector<DashedBox> m_tempDashedBoxes;
+    std::vector<ArrowMarker> m_tempArrows;
+    std::vector<bool> m_tempHighlighted; // 临时空间高亮标记
 };
 
 #endif // ARRAYVISUALIZER_H

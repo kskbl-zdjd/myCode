@@ -3,6 +3,7 @@
 #include "../visualizers/HeapVisualizer.h"
 #include "../algorithms/SortingAlgorithms.h"
 #include "../algorithms/HeapSort.h"
+#include "../algorithms/MergeSort.h"
 #include "../resources/code_examples.h"
 
 #include <QHBoxLayout>
@@ -72,7 +73,7 @@ void BeginnerMode::setupLeftPanel(QWidget *parent)
 
     m_algorithmCombo = new QComboBox();
     m_algorithmCombo->addItems({
-        "冒泡排序", "选择排序", "插入排序", "快速排序", "堆排序"
+        "冒泡排序", "选择排序", "插入排序", "快速排序", "堆排序", "归并排序"
     });
     algoLayout->addWidget(m_algorithmCombo);
 
@@ -259,6 +260,8 @@ void BeginnerMode::onStartClicked()
             SortingAlgorithms::quickSort(m_arrayVisualizer, m_animCtrl, data);
         } else if (algo == "堆排序") {
             HeapSort::heapSort(m_heapVisualizer, m_arrayVisualizer, m_animCtrl, data);
+        } else if (algo == "归并排序") {
+            MergeSort::mergeSort(m_arrayVisualizer, m_animCtrl, data);
         }
     }
 
@@ -375,6 +378,8 @@ void BeginnerMode::updateCodeDisplay(const QString &algorithmName)
         m_codeDisplay->setPlainText(CodeExamples::QUICK_SORT);
     } else if (algorithmName == "堆排序") {
         m_codeDisplay->setPlainText(CodeExamples::HEAP_SORT_CODE);
+    } else if (algorithmName == "归并排序") {
+        m_codeDisplay->setPlainText(CodeExamples::MERGE_SORT_CODE);
     }
 }
 
