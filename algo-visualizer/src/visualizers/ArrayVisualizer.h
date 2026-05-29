@@ -38,6 +38,7 @@ public:
     // --- 数据操作 ---
     void setData(const std::vector<int> &data);
     std::vector<int> getData() const;
+    void resize(int newSize, const std::vector<int>& newData = {}); // 扩容/缩容动画
 
     // --- 色块状态 ---
     void setBlockState(int index, BlockState state);
@@ -67,6 +68,14 @@ public:
     void clearTempArrows();
     void highlightTempBlock(int index);
     void unhighlightTempBlock(int index);
+
+    // --- 新增：clear() 状态 ---
+    void showClearState();
+    void hideClearState();
+
+    // --- 新增：resize(0) 专用状态 ---
+    void showResizeZeroState(const QString& label);
+    void hideResizeZeroState();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -110,6 +119,9 @@ private:
     std::vector<DashedBox> m_tempDashedBoxes;
     std::vector<ArrowMarker> m_tempArrows;
     std::vector<bool> m_tempHighlighted; // 临时空间高亮标记
+    bool m_showClear = false;            // clear() 状态
+    bool m_showResizeZero = false;       // resize(0) 状态
+    QString m_resizeZeroLabel;           // resize(0) 显示的标签文字
 };
 
 #endif // ARRAYVISUALIZER_H

@@ -1,0 +1,50 @@
+# === Qt ===
+*.user
+*.user.*
+*.pro.user
+
+# === Build artifacts ===
+build/
+/build*/
+out/
+/out*/
+
+# === CMake ===
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+Makefile
+*.ninja
+CMakePresets.json.user
+
+# === Autogen (Qt) ===
+*_autogen/
+.moc/
+.qt/
+
+# === Binaries ===
+*.exe
+*.dll
+*.so
+*.dylib
+*.obj
+*.o
+*.a
+*.lib
+*.pdb
+*.ilk
+*.exp
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+
+# === OS ===
+Thumbs.db
+Desktop.ini
+.DS_Store

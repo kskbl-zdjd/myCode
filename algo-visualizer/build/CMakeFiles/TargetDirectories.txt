@@ -1,5 +1,0 @@
-E:/QTproject/algo-visualizer/build/CMakeFiles/AlgorithmVisualizer.dir
-E:/QTproject/algo-visualizer/build/CMakeFiles/edit_cache.dir
-E:/QTproject/algo-visualizer/build/CMakeFiles/rebuild_cache.dir
-E:/QTproject/algo-visualizer/build/CMakeFiles/AlgorithmVisualizer_autogen_timestamp_deps.dir
-E:/QTproject/algo-visualizer/build/CMakeFiles/AlgorithmVisualizer_autogen.dir
